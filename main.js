@@ -146,20 +146,19 @@ class WebsocketInstance extends InstanceBase {
 	getConfigFields() {
 		return [
 			{
-				type: 'static-text',
-				id: 'info',
-				width: 12,
-				label: 'Information',
-				value:
-					"<strong>PLEASE READ THIS!</strong> Generic modules is only for use with custom applications. If you use this module to control a device or software on the market that more than you are using, <strong>PLEASE let us know</strong> about this software, so we can make a proper module for it. If we already support this and you use this to trigger a feature our module doesn't support, please let us know. We want companion to be as easy as possible to use for anyone.",
-			},
-			{
 				type: 'textinput',
 				id: 'url',
 				label: 'Target URL',
 				tooltip: 'The URL of the WebSocket server (ws[s]://domain[:port][/path])',
 				width: 12,
 				regex: '/' + this.wsRegex + '/',
+			},
+			{
+				type: 'textinput',
+				id: 'project_id',
+				label: 'Project ID',
+				tooltip: 'Set the ID of the Project you want to control',
+				width: 12,
 			},
 			{
 				type: 'checkbox',
@@ -258,6 +257,208 @@ class WebsocketInstance extends InstanceBase {
 					this.ws.send(value + (this.config.append_new_line ? '\r\n' : ''))
 				},
 			},
+			set_interview_state: {
+				name: 'Set Interview Bug State',
+				options: [
+					{	
+						id: 'action',
+						label: 'Action',
+						type: 'dropdown',
+						default: 'toggle',
+						choices: [
+							{ id: 'toggle', label: 'Toggle' },
+							{ id: 'visible', label: 'Visible' },
+							{ id: 'hidden', label: 'Hidden' }
+						]
+					}
+				],
+				callback: async (action, context) => {
+					const data = await context.parseVariablesInString(action.options.action)
+					if (this.config.debug_messages) {
+						this.log('debug', `Message sent: ${data}`)
+					}
+					const message = JSON.stringify({
+						message: {
+							type: "companion_interview_state", 
+							project_id: this.config.project_id, 
+							data: data
+						}
+					})
+					
+					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+				},
+			},
+			swap_sides: {
+				name: 'Swap Team Sides in current Match',
+				options: [],
+				callback: async (action, context) => {
+					if (this.config.debug_messages) {
+						this.log('debug', `Message sent: ${action}`)
+					}
+					const message = JSON.stringify({
+						message: {
+							type: "companion_swap_sides", 
+							project_id: this.config.project_id, 
+							data: ""
+						}
+					})
+
+					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+				},
+			},
+			add_score: {
+				name: 'Adds Score to a Team',
+				options: [
+					{	
+						id: 'side',
+						label: 'Side',
+						type: 'dropdown',
+						default: 'left',
+						choices: [
+							{ id: 'left', label: 'Left' },
+							{ id: 'right', label: 'Right' }
+						]
+					},
+					{
+						id: 'score',
+						label: 'Score',
+						type: 'number',
+						tooltip: 'Score to add (can be negative to remove points)',
+						default: 1,
+					}
+
+				],
+				callback: async (action, context) => {
+					if (this.config.debug_messages) {
+						this.log('debug', `Message sent: ${action}`)
+					}
+					const message = JSON.stringify({
+						message: {
+							type: "companion_add_score", 
+							project_id: this.config.project_id, 
+							data: ""
+						}
+					})
+
+					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+				},
+			},
+			refresh_standings: {
+				name: 'Refresh all Standings',
+				options: [],
+				callback: async (action, context) => {
+					if (this.config.debug_messages) {
+						this.log('debug', `Message sent: ${action}`)
+					}
+					const message = JSON.stringify({
+						message: {
+							type: "companion_refresh_standings", 
+							project_id: this.config.project_id, 
+							data: ""
+						}
+					})
+
+					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+				},
+			},
+			timer_state: {
+				name: 'Set Timer State',
+				options: [
+					{	
+						id: 'action',
+						label: 'Action',
+						type: 'dropdown',
+						default: 'start',
+						choices: [
+							{ id: 'restart', label: 'Restart' }
+						]
+					}
+				],
+				callback: async (action, context) => {
+					const data = await context.parseVariablesInString(action.options.action)
+					if (this.config.debug_messages) {
+						this.log('debug', `Message sent: ${action}`)
+					}
+					const message = JSON.stringify({
+						message: {
+							type: "companion_timer_state", 
+							project_id: this.config.project_id, 
+							data: data
+						}
+					})
+
+					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+				},
+			},
+			prediction_state: {
+				name: 'Set Prediction Bug State',
+				options: [
+					{	
+						id: 'action',
+						label: 'Action',
+						type: 'dropdown',
+						default: 'toggle',
+						choices: [
+							{ id: 'toggle', label: 'Toggle' },
+							{ id: 'visible', label: 'Visible' },
+							{ id: 'hidden', label: 'Hidden' }
+						]
+					},
+					{
+						id: 'caster',
+						label: 'Analyst',
+						type: 'number',
+						tooltip: 'The Index of the Analyst you want to set the Predition Bug for (starts at 0)',
+						default: 0,
+						min: 0,
+						max: 100
+					}
+				],
+				callback: async (action, context) => {
+					if (this.config.debug_messages) {
+						this.log('debug', `Message sent: ${action}`)
+					}
+					const message = JSON.stringify({
+						message: {
+							type: "companion_prediction_state", 
+							project_id: this.config.project_id, 
+							data: ""
+						}
+					})
+
+					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+				},
+			},
+			set_current_match: {
+				name: 'Set the current Match',
+				options: [
+					{	
+						id: 'action',
+						label: 'Action',
+						type: 'dropdown',
+						default: 'next',
+						choices: [
+							{ id: 'previous', label: 'Previous' },
+							{ id: 'next', label: 'Next' }
+						]
+					}
+				],
+				callback: async (action, context) => {
+					const data = await context.parseVariablesInString(action.options.action)
+					if (this.config.debug_messages) {
+						this.log('debug', `Message sent: ${action}`)
+					}
+					const message = JSON.stringify({
+						message: {
+							type: "companion_current_match", 
+							project_id: this.config.project_id, 
+							data: data
+						}
+					})
+
+					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+				},
+			}
 		})
 	}
 }

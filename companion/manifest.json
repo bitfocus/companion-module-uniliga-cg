@@ -1,15 +1,15 @@
 {
-	"id": "generic-websocket",
-	"name": "generic-websocket",
-	"shortname": "websocket",
-	"description": "generic-websocket",
+	"id": "uniliga-cg",
+	"name": "uniliga-cg",
+	"shortname": "Uniliga CG",
+	"description": "Control Uniliga CG with Companion!",
 	"version": "0.0.0",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-generic-websocket.git",
 	"bugs": "https://github.com/bitfocus/companion-module-generic-websocket/issues",
 	"maintainers": [
 		{
-			"name": "Krzysztof Pyrkosz"
+			"name": "Tim Konopka"
 		}
 	],
 	"legacyIds": [],
@@ -19,7 +19,7 @@
 		"apiVersion": "0.0.0",
 		"entrypoint": "../main.js"
 	},
-	"manufacturer": "Generic",
-	"products": ["WebSocket"],
-	"keywords": ["Protocol", "Generic"]
+	"manufacturer": "Uniliga",
+	"products": ["Uniliga CG"],
+	"keywords": ["Uniliga", "Generic"]
 }
