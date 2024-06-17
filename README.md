@@ -10,21 +10,21 @@
 ## Configuration
 1. First head to the Companion GUI, search for the Uniliga CG Module in the Connections Tab and add it.
 2. In the Target URL Field add `wss://overlays.dev.konopka.gg/wss/overlays/`.
-3. In the Project ID Field add your Projects ID. You can find this by going to the Frontend of the Uniliga CG and copying the ID from the Home Tab.
+3. In the Project ID Field add your Project's ID. You can find this by going to the Frontend of the Uniliga CG and copying the ID from the Home Tab.
 
 
 ## Usage
 The following Features are currently available:
 - Set interview bug state (Toggle, Hidden, Visible)
-- Swap team sides in current match
+- Set prediction bug state (Toggle, Hidden, Visible)
 - Refresh all Standings
-- Set current Match (Previous, Next)
+- Restart Timer
+- Set, add or substract from Timer
+- Set current match (Previous, Next)
+- Swap team sides in current match
+- Set, add or substract score from a Team in the current match
 
-The following Buttons are already available in Companion, but dont have any function yet:
-- Add Score to a Team
-- Set Prediction Bug State
-
-In the root of the cloned folder is a example companion Page, that showcases the current Features. It might be possible that this Page breaks if you clone the project to another Folder than the developer, however the buttons are quite self explanatory, so it shouldn't be to hard to create them yourself.
+In the root of the cloned folder is a example companion Page, that showcases the current Features. 
 
 ## Devlopmnet
 1. All the Code is located in main.js, you are free to change stuff there
