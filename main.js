@@ -307,36 +307,55 @@ class WebsocketInstance extends InstanceBase {
 				},
 			},
 			add_score: {
-				name: 'Adds Score to a Team',
+				name: 'Changes the Score of a Team',
 				options: [
 					{	
 						id: 'side',
 						label: 'Side',
 						type: 'dropdown',
 						default: 'left',
+						tooltip: 'Side as in current match NOT necessarily as in Schedule. Side swaps will be factored in!',
 						choices: [
 							{ id: 'left', label: 'Left' },
 							{ id: 'right', label: 'Right' }
+						]
+					},
+					{	
+						id: 'action',
+						label: 'Action',
+						type: 'dropdown',
+						default: 'set',
+						choices: [
+							{ id: 'set', label: 'Set' },
+							{ id: 'add', label: 'Add' },
+							{ id: 'subtract', label: 'Subtract' }
 						]
 					},
 					{
 						id: 'score',
 						label: 'Score',
 						type: 'number',
-						tooltip: 'Score to add (can be negative to remove points)',
+						tooltip: 'Score to add',
 						default: 1,
+						min: 0
 					}
 
 				],
 				callback: async (action, context) => {
+					const data = { 
+						type: await context.parseVariablesInString(action.options.action), 
+						side: await context.parseVariablesInString(action.options.side),
+						score: await context.parseVariablesInString(action.options.score)
+					}
+
 					if (this.config.debug_messages) {
 						this.log('debug', `Message sent: ${action}`)
 					}
 					const message = JSON.stringify({
 						message: {
-							type: "companion_add_score", 
+							type: "companion_score_change", 
 							project_id: this.config.project_id, 
-							data: ""
+							data: data
 						}
 					})
 
@@ -362,7 +381,7 @@ class WebsocketInstance extends InstanceBase {
 				},
 			},
 			timer_state: {
-				name: 'Set Timer State',
+				name: 'Restart Timer',
 				options: [
 					{	
 						id: 'action',
@@ -390,6 +409,48 @@ class WebsocketInstance extends InstanceBase {
 					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
 				},
 			},
+			timer_set: {
+				name: 'Change Timer',
+				options: [
+					{	
+						id: 'action',
+						label: 'Action',
+						type: 'dropdown',
+						default: 'set',
+						choices: [
+							{ id: 'set', label: 'Set' },
+							{ id: 'add', label: 'Add' },
+							{ id: 'subtract', label: 'Subtract' }
+						]
+					},
+					{
+						id: 'seconds',
+						label: 'Seconds',
+						type: 'number',
+						tooltip: 'The time in seconds you want to set, add or subtract',
+						default: 0,
+						min: 0
+					}
+				],
+				callback: async (action, context) => {
+					const data = { 
+						type: await context.parseVariablesInString(action.options.action), 
+						seconds: await context.parseVariablesInString(action.options.seconds) 
+					}
+					if (this.config.debug_messages) {
+						this.log('debug', `Message sent: ${action}`)
+					}
+					const message = JSON.stringify({
+						message: {
+							type: "companion_timer_change", 
+							project_id: this.config.project_id, 
+							data: data
+						}
+					})
+
+					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+				},
+			},
 			prediction_state: {
 				name: 'Set Prediction Bug State',
 				options: [
@@ -405,7 +466,7 @@ class WebsocketInstance extends InstanceBase {
 						]
 					},
 					{
-						id: 'caster',
+						id: 'analyst',
 						label: 'Analyst',
 						type: 'number',
 						tooltip: 'The Index of the Analyst you want to set the Predition Bug for (starts at 0)',
@@ -415,6 +476,11 @@ class WebsocketInstance extends InstanceBase {
 					}
 				],
 				callback: async (action, context) => {
+					const data = { 
+						type: await context.parseVariablesInString(action.options.action), 
+						analyst: await context.parseVariablesInString(action.options.analyst) 
+					}
+
 					if (this.config.debug_messages) {
 						this.log('debug', `Message sent: ${action}`)
 					}
@@ -422,7 +488,7 @@ class WebsocketInstance extends InstanceBase {
 						message: {
 							type: "companion_prediction_state", 
 							project_id: this.config.project_id, 
-							data: ""
+							data: data
 						}
 					})
 
