@@ -3,7 +3,7 @@ import WebSocket from 'ws'
 import objectPath from 'object-path'
 import { upgradeScripts } from './upgrade.js'
 
-class WebsocketInstance extends InstanceBase {
+class UniligaCGInstance extends InstanceBase {
 	isInitialized = false
 
 	subscriptions = new Map()
@@ -233,6 +233,13 @@ class WebsocketInstance extends InstanceBase {
 					this.subscriptions.delete(feedback.id)
 				},
 			},
+			interview_bug_state: {
+				type: 'boolean',
+				name: 'Interview bug state',
+				description: 'Whether the interview bug is active or not.',
+				options: [],
+
+			}
 		})
 	}
 
@@ -573,4 +580,4 @@ class WebsocketInstance extends InstanceBase {
 	}
 }
 
-runEntrypoint(WebsocketInstance, upgradeScripts)
+runEntrypoint(UniligaCGInstance, upgradeScripts)
