@@ -451,8 +451,8 @@ class WebsocketInstance extends InstanceBase {
 					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
 				},
 			},
-			prediction_state: {
-				name: 'Set Prediction Bug State',
+			prediction_state_analyst: {
+				name: 'Set Prediction Bug State for an Analyst',
 				options: [
 					{	
 						id: 'action',
@@ -486,7 +486,51 @@ class WebsocketInstance extends InstanceBase {
 					}
 					const message = JSON.stringify({
 						message: {
-							type: "companion_prediction_state", 
+							type: "companion_prediction_state_analyst", 
+							project_id: this.config.project_id, 
+							data: data
+						}
+					})
+
+					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+				},
+			},
+			prediction_state_caster: {
+				name: 'Set Prediction Bug State for a Caster',
+				options: [
+					{	
+						id: 'action',
+						label: 'Action',
+						type: 'dropdown',
+						default: 'toggle',
+						choices: [
+							{ id: 'toggle', label: 'Toggle' },
+							{ id: 'visible', label: 'Visible' },
+							{ id: 'hidden', label: 'Hidden' }
+						]
+					},
+					{
+						id: 'caster',
+						label: 'Caster',
+						type: 'number',
+						tooltip: 'The Index of the Caster you want to set the Predition Bug for (starts at 0)',
+						default: 0,
+						min: 0,
+						max: 100
+					}
+				],
+				callback: async (action, context) => {
+					const data = { 
+						type: await context.parseVariablesInString(action.options.action), 
+						caster: await context.parseVariablesInString(action.options.caster) 
+					}
+
+					if (this.config.debug_messages) {
+						this.log('debug', `Message sent: ${action}`)
+					}
+					const message = JSON.stringify({
+						message: {
+							type: "companion_prediction_state_caster", 
 							project_id: this.config.project_id, 
 							data: data
 						}

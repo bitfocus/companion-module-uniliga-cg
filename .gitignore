@@ -1,2 +1,5 @@
 node_modules/
 /DEBUG-*
+/pkg
+/pkg.tgz
+*.tgz
