@@ -16,7 +16,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/bitfocus/companion-module-generic-websocket.git"
+		"url": "git+https://https://github.com/bitfocus/companion-module-uniliga-cg"
 	},
 	"devDependencies": {
 		"@companion-module/tools": "^1.5.1"

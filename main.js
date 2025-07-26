@@ -196,43 +196,6 @@ class UniligaCGInstance extends InstanceBase {
 
 	initFeedbacks() {
 		this.setFeedbackDefinitions({
-			websocket_variable: {
-				type: 'advanced',
-				name: 'Update variable with value from WebSocket message',
-				description:
-					'Receive messages from the WebSocket and set the value to a variable. Variables can be used on any button.',
-				options: [
-					{
-						type: 'textinput',
-						label: 'JSON Path (blank if not json)',
-						id: 'subpath',
-						default: '',
-					},
-					{
-						type: 'textinput',
-						label: 'Variable',
-						id: 'variable',
-						regex: '/^[-a-zA-Z0-9_]+$/',
-						default: '',
-					},
-				],
-				callback: () => {
-					// Nothing to do, as this feeds a variable
-					return {}
-				},
-				subscribe: (feedback) => {
-					this.subscriptions.set(feedback.id, {
-						variableName: feedback.options.variable,
-						subpath: feedback.options.subpath,
-					})
-					if (this.isInitialized) {
-						this.updateVariables(feedback.id)
-					}
-				},
-				unsubscribe: (feedback) => {
-					this.subscriptions.delete(feedback.id)
-				},
-			},
 			interview_bug_state: {
 				type: 'boolean',
 				name: 'Interview bug state',
@@ -245,25 +208,6 @@ class UniligaCGInstance extends InstanceBase {
 
 	initActions() {
 		this.setActionDefinitions({
-			send_command: {
-				name: 'Send generic command',
-				options: [
-					{
-						type: 'textinput',
-						label: 'data',
-						id: 'data',
-						default: '',
-						useVariables: true,
-					},
-				],
-				callback: async (action, context) => {
-					const value = await context.parseVariablesInString(action.options.data)
-					if (this.config.debug_messages) {
-						this.log('debug', `Message sent: ${value}`)
-					}
-					this.ws.send(value + (this.config.append_new_line ? '\r\n' : ''))
-				},
-			},
 			set_interview_state: {
 				name: 'Set Interview Bug State',
 				options: [
