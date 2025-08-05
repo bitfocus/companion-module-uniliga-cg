@@ -11,12 +11,11 @@
 	"dependencies": {
 		"@companion-module/base": "~1.12.1",
 		"object-path": "^0.11.8",
-		"webpack": "^5.99.9",
 		"ws": "^7.5.10"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://https://github.com/bitfocus/companion-module-uniliga-cg"
+		"url": "git+https://github.com/bitfocus/companion-module-uniliga-cg"
 	},
 	"devDependencies": {
 		"@companion-module/tools": "^1.5.1"
