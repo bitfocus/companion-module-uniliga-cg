@@ -1,6 +1,6 @@
 {
 	"name": "uniliga-cg",
-	"version": "v1.0.3",
+	"version": "1.0.4",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
