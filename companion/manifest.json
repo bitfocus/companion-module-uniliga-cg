@@ -3,7 +3,7 @@
 	"name": "uniliga-cg",
 	"shortname": "Uniliga CG",
 	"description": "Control Uniliga CG with Companion!",
-	"version": "v1.0.3",
+	"version": "0.0.0",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-uniliga-cg.git",
 	"bugs": "https://github.com/bitfocus/companion-module-uniliga-cg/issues",
