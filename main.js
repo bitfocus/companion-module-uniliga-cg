@@ -201,8 +201,7 @@ class UniligaCGInstance extends InstanceBase {
 				name: 'Interview bug state',
 				description: 'Whether the interview bug is active or not.',
 				options: [],
-
-			}
+			},
 		})
 	}
 
@@ -211,7 +210,7 @@ class UniligaCGInstance extends InstanceBase {
 			set_interview_state: {
 				name: 'Set Interview Bug State',
 				options: [
-					{	
+					{
 						id: 'action',
 						label: 'Action',
 						type: 'dropdown',
@@ -219,9 +218,9 @@ class UniligaCGInstance extends InstanceBase {
 						choices: [
 							{ id: 'toggle', label: 'Toggle' },
 							{ id: 'visible', label: 'Visible' },
-							{ id: 'hidden', label: 'Hidden' }
-						]
-					}
+							{ id: 'hidden', label: 'Hidden' },
+						],
+					},
 				],
 				callback: async (action, context) => {
 					const data = await context.parseVariablesInString(action.options.action)
@@ -230,12 +229,12 @@ class UniligaCGInstance extends InstanceBase {
 					}
 					const message = JSON.stringify({
 						message: {
-							type: "companion_interview_state", 
-							project_id: this.config.project_id, 
-							data: data
-						}
+							type: 'companion_interview_state',
+							project_id: this.config.project_id,
+							data: data,
+						},
 					})
-					
+
 					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
 				},
 			},
@@ -248,10 +247,10 @@ class UniligaCGInstance extends InstanceBase {
 					}
 					const message = JSON.stringify({
 						message: {
-							type: "companion_swap_sides", 
-							project_id: this.config.project_id, 
-							data: ""
-						}
+							type: 'companion_swap_sides',
+							project_id: this.config.project_id,
+							data: '',
+						},
 					})
 
 					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
@@ -260,7 +259,7 @@ class UniligaCGInstance extends InstanceBase {
 			add_score: {
 				name: 'Changes the Score of a Team',
 				options: [
-					{	
+					{
 						id: 'side',
 						label: 'Side',
 						type: 'dropdown',
@@ -268,10 +267,10 @@ class UniligaCGInstance extends InstanceBase {
 						tooltip: 'Side as in current match NOT necessarily as in Schedule. Side swaps will be factored in!',
 						choices: [
 							{ id: 'left', label: 'Left' },
-							{ id: 'right', label: 'Right' }
-						]
+							{ id: 'right', label: 'Right' },
+						],
 					},
-					{	
+					{
 						id: 'action',
 						label: 'Action',
 						type: 'dropdown',
@@ -279,8 +278,8 @@ class UniligaCGInstance extends InstanceBase {
 						choices: [
 							{ id: 'set', label: 'Set' },
 							{ id: 'add', label: 'Add' },
-							{ id: 'subtract', label: 'Subtract' }
-						]
+							{ id: 'subtract', label: 'Subtract' },
+						],
 					},
 					{
 						id: 'score',
@@ -288,15 +287,14 @@ class UniligaCGInstance extends InstanceBase {
 						type: 'number',
 						tooltip: 'Score to add',
 						default: 1,
-						min: 0
-					}
-
+						min: 0,
+					},
 				],
 				callback: async (action, context) => {
-					const data = { 
-						type: await context.parseVariablesInString(action.options.action), 
+					const data = {
+						type: await context.parseVariablesInString(action.options.action),
 						side: await context.parseVariablesInString(action.options.side),
-						score: await context.parseVariablesInString(action.options.score)
+						score: await context.parseVariablesInString(action.options.score),
 					}
 
 					if (this.config.debug_messages) {
@@ -304,10 +302,10 @@ class UniligaCGInstance extends InstanceBase {
 					}
 					const message = JSON.stringify({
 						message: {
-							type: "companion_score_change", 
-							project_id: this.config.project_id, 
-							data: data
-						}
+							type: 'companion_score_change',
+							project_id: this.config.project_id,
+							data: data,
+						},
 					})
 
 					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
@@ -322,10 +320,10 @@ class UniligaCGInstance extends InstanceBase {
 					}
 					const message = JSON.stringify({
 						message: {
-							type: "companion_refresh_standings", 
-							project_id: this.config.project_id, 
-							data: ""
-						}
+							type: 'companion_refresh_standings',
+							project_id: this.config.project_id,
+							data: '',
+						},
 					})
 
 					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
@@ -334,15 +332,13 @@ class UniligaCGInstance extends InstanceBase {
 			timer_state: {
 				name: 'Restart Timer',
 				options: [
-					{	
+					{
 						id: 'action',
 						label: 'Action',
 						type: 'dropdown',
 						default: 'start',
-						choices: [
-							{ id: 'restart', label: 'Restart' }
-						]
-					}
+						choices: [{ id: 'restart', label: 'Restart' }],
+					},
 				],
 				callback: async (action, context) => {
 					const data = await context.parseVariablesInString(action.options.action)
@@ -351,10 +347,10 @@ class UniligaCGInstance extends InstanceBase {
 					}
 					const message = JSON.stringify({
 						message: {
-							type: "companion_timer_state", 
-							project_id: this.config.project_id, 
-							data: data
-						}
+							type: 'companion_timer_state',
+							project_id: this.config.project_id,
+							data: data,
+						},
 					})
 
 					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
@@ -363,7 +359,7 @@ class UniligaCGInstance extends InstanceBase {
 			timer_set: {
 				name: 'Change Timer',
 				options: [
-					{	
+					{
 						id: 'action',
 						label: 'Action',
 						type: 'dropdown',
@@ -371,8 +367,8 @@ class UniligaCGInstance extends InstanceBase {
 						choices: [
 							{ id: 'set', label: 'Set' },
 							{ id: 'add', label: 'Add' },
-							{ id: 'subtract', label: 'Subtract' }
-						]
+							{ id: 'subtract', label: 'Subtract' },
+						],
 					},
 					{
 						id: 'seconds',
@@ -380,23 +376,56 @@ class UniligaCGInstance extends InstanceBase {
 						type: 'number',
 						tooltip: 'The time in seconds you want to set, add or subtract',
 						default: 0,
-						min: 0
-					}
+						min: 0,
+					},
 				],
 				callback: async (action, context) => {
-					const data = { 
-						type: await context.parseVariablesInString(action.options.action), 
-						seconds: await context.parseVariablesInString(action.options.seconds) 
+					const data = {
+						type: await context.parseVariablesInString(action.options.action),
+						seconds: await context.parseVariablesInString(action.options.seconds),
 					}
 					if (this.config.debug_messages) {
 						this.log('debug', `Message sent: ${action}`)
 					}
 					const message = JSON.stringify({
 						message: {
-							type: "companion_timer_change", 
-							project_id: this.config.project_id, 
-							data: data
-						}
+							type: 'companion_timer_change',
+							project_id: this.config.project_id,
+							data: data,
+						},
+					})
+
+					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+				},
+			},
+			timer_set_mode: {
+				name: 'Set Timer / Local Time mode',
+				options: [
+					{
+						id: 'action',
+						label: 'Action',
+						type: 'dropdown',
+						default: 'toggle',
+						choices: [
+							{ id: 'toggle', label: 'Toggle' },
+							{ id: 'localTime', label: 'Local Time' },
+							{ id: 'timer', label: 'Timer' },
+						],
+					},
+				],
+				callback: async (action, context) => {
+					const data = {
+						type: await context.parseVariablesInString(action.options.action),
+					}
+					if (this.config.debug_messages) {
+						this.log('debug', `Message sent: ${action}`)
+					}
+					const message = JSON.stringify({
+						message: {
+							type: 'companion_timer_set_mode',
+							project_id: this.config.project_id,
+							data: data,
+						},
 					})
 
 					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
@@ -405,7 +434,7 @@ class UniligaCGInstance extends InstanceBase {
 			prediction_state_analyst: {
 				name: 'Set Prediction Bug State for an Analyst',
 				options: [
-					{	
+					{
 						id: 'action',
 						label: 'Action',
 						type: 'dropdown',
@@ -413,8 +442,8 @@ class UniligaCGInstance extends InstanceBase {
 						choices: [
 							{ id: 'toggle', label: 'Toggle' },
 							{ id: 'visible', label: 'Visible' },
-							{ id: 'hidden', label: 'Hidden' }
-						]
+							{ id: 'hidden', label: 'Hidden' },
+						],
 					},
 					{
 						id: 'analyst',
@@ -423,13 +452,13 @@ class UniligaCGInstance extends InstanceBase {
 						tooltip: 'The Index of the Analyst you want to set the Predition Bug for (starts at 0)',
 						default: 0,
 						min: 0,
-						max: 100
-					}
+						max: 100,
+					},
 				],
 				callback: async (action, context) => {
-					const data = { 
-						type: await context.parseVariablesInString(action.options.action), 
-						analyst: await context.parseVariablesInString(action.options.analyst) 
+					const data = {
+						type: await context.parseVariablesInString(action.options.action),
+						analyst: await context.parseVariablesInString(action.options.analyst),
 					}
 
 					if (this.config.debug_messages) {
@@ -437,10 +466,10 @@ class UniligaCGInstance extends InstanceBase {
 					}
 					const message = JSON.stringify({
 						message: {
-							type: "companion_prediction_state_analyst", 
-							project_id: this.config.project_id, 
-							data: data
-						}
+							type: 'companion_prediction_state_analyst',
+							project_id: this.config.project_id,
+							data: data,
+						},
 					})
 
 					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
@@ -449,7 +478,7 @@ class UniligaCGInstance extends InstanceBase {
 			prediction_state_caster: {
 				name: 'Set Prediction Bug State for a Caster',
 				options: [
-					{	
+					{
 						id: 'action',
 						label: 'Action',
 						type: 'dropdown',
@@ -457,8 +486,8 @@ class UniligaCGInstance extends InstanceBase {
 						choices: [
 							{ id: 'toggle', label: 'Toggle' },
 							{ id: 'visible', label: 'Visible' },
-							{ id: 'hidden', label: 'Hidden' }
-						]
+							{ id: 'hidden', label: 'Hidden' },
+						],
 					},
 					{
 						id: 'caster',
@@ -467,13 +496,13 @@ class UniligaCGInstance extends InstanceBase {
 						tooltip: 'The Index of the Caster you want to set the Predition Bug for (starts at 0)',
 						default: 0,
 						min: 0,
-						max: 100
-					}
+						max: 100,
+					},
 				],
 				callback: async (action, context) => {
-					const data = { 
-						type: await context.parseVariablesInString(action.options.action), 
-						caster: await context.parseVariablesInString(action.options.caster) 
+					const data = {
+						type: await context.parseVariablesInString(action.options.action),
+						caster: await context.parseVariablesInString(action.options.caster),
 					}
 
 					if (this.config.debug_messages) {
@@ -481,10 +510,10 @@ class UniligaCGInstance extends InstanceBase {
 					}
 					const message = JSON.stringify({
 						message: {
-							type: "companion_prediction_state_caster", 
-							project_id: this.config.project_id, 
-							data: data
-						}
+							type: 'companion_prediction_state_caster',
+							project_id: this.config.project_id,
+							data: data,
+						},
 					})
 
 					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
@@ -493,16 +522,16 @@ class UniligaCGInstance extends InstanceBase {
 			set_current_match: {
 				name: 'Set the current Match',
 				options: [
-					{	
+					{
 						id: 'action',
 						label: 'Action',
 						type: 'dropdown',
 						default: 'next',
 						choices: [
 							{ id: 'previous', label: 'Previous' },
-							{ id: 'next', label: 'Next' }
-						]
-					}
+							{ id: 'next', label: 'Next' },
+						],
+					},
 				],
 				callback: async (action, context) => {
 					const data = await context.parseVariablesInString(action.options.action)
@@ -511,15 +540,15 @@ class UniligaCGInstance extends InstanceBase {
 					}
 					const message = JSON.stringify({
 						message: {
-							type: "companion_current_match", 
-							project_id: this.config.project_id, 
-							data: data
-						}
+							type: 'companion_current_match',
+							project_id: this.config.project_id,
+							data: data,
+						},
 					})
 
 					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
 				},
-			}
+			},
 		})
 	}
 }
