@@ -549,6 +549,52 @@ class UniligaCGInstance extends InstanceBase {
 					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
 				},
 			},
+			graphic_state: {
+				name: 'Set Graphic State',
+				options: [
+					{
+						id: 'graphic',
+						label: 'Graphic',
+						type: 'dropdown',
+						default: 'schedule',
+						choices: [
+							{ id: 'schedule', label: 'Schedule' },
+							{ id: 'standings', label: 'Tabelle' },
+							{ id: 'rosters', label: 'Roster' },
+						],
+					},
+					{
+						id: 'action',
+						label: 'Action',
+						type: 'dropdown',
+						default: 'toggle',
+						choices: [
+							{ id: 'toggle', label: 'Toggle' },
+							{ id: 'visible', label: 'Visible' },
+							{ id: 'hidden', label: 'Hidden' },
+						],
+					},
+				],
+				callback: async (action, context) => {
+					const data = {
+						graphic: await context.parseVariablesInString(action.options.graphic),
+						type: await context.parseVariablesInString(action.options.action),
+					}
+
+					if (this.config.debug_messages) {
+						this.log('debug', `Message sent: ${action}`)
+					}
+					const message = JSON.stringify({
+						message: {
+							type: 'companion_graphic_state',
+							project_id: this.config.project_id,
+							data: data,
+						},
+					})
+
+					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+				},
+			},
 		})
 	}
 }
