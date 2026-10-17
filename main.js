@@ -1,12 +1,24 @@
 import { InstanceBase, runEntrypoint, InstanceStatus } from '@companion-module/base'
 import WebSocket from 'ws'
-import objectPath from 'object-path'
 import { upgradeScripts } from './upgrade.js'
+import {
+	GRAPHICS,
+	TALENT_ROLES,
+	STATE_TYPES,
+	variables,
+	graphicVisible,
+	predictionVisible,
+	interviewVisible,
+} from './state.js'
+import { presets, ACTIVE_STYLE } from './presets.js'
 
 class UniligaCGInstance extends InstanceBase {
 	isInitialized = false
 
-	subscriptions = new Map()
+	// letzter Stand pro Nachrichten-Typ aus STATE_TYPES, z. B. state.schedule
+	state = {}
+	// aktuell definierte Variablen-IDs, um Definitionen nur bei Änderung neu zu setzen
+	variableIds = ''
 	wsRegex = '^wss?:\\/\\/([\\da-z\\.-]+)(:\\d{1,5})?(?:\\/(.*))?$'
 
 	async init(config) {
@@ -18,7 +30,7 @@ class UniligaCGInstance extends InstanceBase {
 		this.updateVariables()
 		this.initActions()
 		this.initFeedbacks()
-		this.subscribeFeedbacks()
+		this.setPresetDefinitions(presets(this.label))
 	}
 
 	async destroy() {
@@ -38,29 +50,44 @@ class UniligaCGInstance extends InstanceBase {
 		this.initWebSocket()
 	}
 
-	updateVariables(callerId = null) {
-		let variables = new Set()
-		let defaultValues = {}
-		this.subscriptions.forEach((subscription, subscriptionId) => {
-			if (!subscription.variableName.match(/^[-a-zA-Z0-9_]+$/)) {
-				return
-			}
-			variables.add(subscription.variableName)
-			if (callerId === null || callerId === subscriptionId) {
-				defaultValues[subscription.variableName] = ''
-			}
-		})
-		let variableDefinitions = []
-		variables.forEach((variable) => {
-			variableDefinitions.push({
-				name: variable,
-				variableId: variable,
-			})
-		})
-		this.setVariableDefinitions(variableDefinitions)
-		if (this.config.reset_variables) {
-			this.setVariableValues(defaultValues)
+	// Variablen aus dem aktuellen Stand; Definitionen nur neu setzen, wenn sich die IDs ändern (z. B. mehr Caster)
+	updateVariables() {
+		const list = variables(this.state)
+		const ids = list.map((v) => v.variableId).join(',')
+		if (ids !== this.variableIds) {
+			this.variableIds = ids
+			this.setVariableDefinitions(list.map(({ variableId, name }) => ({ variableId, name })))
 		}
+		this.setVariableValues(Object.fromEntries(list.map((v) => [v.variableId, v.value])))
+	}
+
+	// Projekt beitreten, damit das Backend Updates schickt, und den gespeicherten Stand anfordern
+	joinProject() {
+		this.sendRaw({ type: 'join', project_id: this.config.project_id })
+		this.sendRaw({ type: 'load_all', project_id: this.config.project_id })
+	}
+
+	sendRaw(message) {
+		if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+			this.log('warn', `Not connected, message not sent: ${message.type}`)
+			return
+		}
+		const text = JSON.stringify({ message })
+		if (this.config.debug_messages) {
+			this.log('debug', `Message sent: ${text}`)
+		}
+		this.ws.send(text + (this.config.append_new_line ? '\r\n' : ''))
+	}
+
+	// Companion-Befehl senden; das Backend schickt das Ergebnis an alle außer dem Absender,
+	// deshalb danach den Stand neu laden, damit Variablen und Feedbacks nachziehen
+	sendCommand(message) {
+		if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+			this.log('warn', `Not connected, command not sent`)
+			return
+		}
+		this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+		this.sendRaw({ type: 'load_all', project_id: this.config.project_id })
 	}
 
 	maybeReconnect() {
@@ -94,12 +121,14 @@ class UniligaCGInstance extends InstanceBase {
 		}
 		this.ws = new WebSocket(url)
 
+		this.state = {}
+		this.updateVariables()
+		this.checkFeedbacks()
+
 		this.ws.on('open', () => {
 			this.updateStatus(InstanceStatus.Ok)
 			this.log('debug', `Connection opened`)
-			if (this.config.reset_variables) {
-				this.updateVariables()
-			}
+			this.joinProject()
 		})
 		this.ws.on('close', (code) => {
 			this.log('debug', `Connection closed with code ${code}`)
@@ -119,28 +148,20 @@ class UniligaCGInstance extends InstanceBase {
 			this.log('debug', `Message received: ${data}`)
 		}
 
-		let msgValue = null
+		let message = null
 		try {
-			msgValue = JSON.parse(data)
+			message = JSON.parse(data)?.message
 		} catch (e) {
-			msgValue = data
+			return
 		}
 
-		this.subscriptions.forEach((subscription) => {
-			if (subscription.variableName === '') {
-				return
-			}
-			if (subscription.subpath === '') {
-				this.setVariableValues({
-					[subscription.variableName]: typeof msgValue === 'object' ? JSON.stringify(msgValue) : msgValue,
-				})
-			} else if (typeof msgValue === 'object' && objectPath.has(msgValue, subscription.subpath)) {
-				let value = objectPath.get(msgValue, subscription.subpath)
-				this.setVariableValues({
-					[subscription.variableName]: typeof value === 'object' ? JSON.stringify(value) : value,
-				})
-			}
-		})
+		// Nur Nachrichten des eigenen Projekts mit einem der gemerkten Typen
+		if (!message || !STATE_TYPES.includes(message.type) || message.project_id !== this.config.project_id) {
+			return
+		}
+		this.state = { ...this.state, [message.type]: message.data }
+		this.updateVariables()
+		this.checkFeedbacks()
 	}
 
 	getConfigFields() {
@@ -183,14 +204,6 @@ class UniligaCGInstance extends InstanceBase {
 				tooltip: 'Log incomming and outcomming messages',
 				width: 6,
 			},
-			{
-				type: 'checkbox',
-				id: 'reset_variables',
-				label: 'Reset variables',
-				tooltip: 'Reset variables on init and on connect',
-				width: 6,
-				default: true,
-			},
 		]
 	}
 
@@ -200,7 +213,50 @@ class UniligaCGInstance extends InstanceBase {
 				type: 'boolean',
 				name: 'Interview bug state',
 				description: 'Whether the interview bug is active or not.',
+				defaultStyle: ACTIVE_STYLE,
 				options: [],
+				callback: () => interviewVisible(this.state),
+			},
+			graphic_visible: {
+				type: 'boolean',
+				name: 'Graphic visible',
+				description: 'Whether the graphic is currently shown.',
+				defaultStyle: ACTIVE_STYLE,
+				options: [
+					{
+						id: 'graphic',
+						label: 'Graphic',
+						type: 'dropdown',
+						default: 'schedule',
+						choices: GRAPHICS.map((g) => ({ id: g.id, label: g.label })),
+					},
+				],
+				callback: (feedback) => graphicVisible(this.state, feedback.options.graphic),
+			},
+			prediction_visible: {
+				type: 'boolean',
+				name: 'Prediction bug visible',
+				description: 'Whether the prediction bug of a caster or analyst is shown.',
+				defaultStyle: ACTIVE_STYLE,
+				options: [
+					{
+						id: 'role',
+						label: 'Role',
+						type: 'dropdown',
+						default: 'caster',
+						choices: TALENT_ROLES.map((r) => ({ id: r.id, label: r.label })),
+					},
+					{
+						id: 'index',
+						label: 'Index',
+						type: 'number',
+						tooltip: 'The Index of the Caster or Analyst (starts at 0)',
+						default: 0,
+						min: 0,
+						max: 100,
+					},
+				],
+				callback: (feedback) => predictionVisible(this.state, feedback.options.role, feedback.options.index),
 			},
 		})
 	}
@@ -235,7 +291,7 @@ class UniligaCGInstance extends InstanceBase {
 						},
 					})
 
-					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+					this.sendCommand(message)
 				},
 			},
 			swap_sides: {
@@ -253,7 +309,7 @@ class UniligaCGInstance extends InstanceBase {
 						},
 					})
 
-					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+					this.sendCommand(message)
 				},
 			},
 			add_score: {
@@ -308,7 +364,7 @@ class UniligaCGInstance extends InstanceBase {
 						},
 					})
 
-					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+					this.sendCommand(message)
 				},
 			},
 			refresh_standings: {
@@ -326,7 +382,7 @@ class UniligaCGInstance extends InstanceBase {
 						},
 					})
 
-					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+					this.sendCommand(message)
 				},
 			},
 			timer_state: {
@@ -353,7 +409,7 @@ class UniligaCGInstance extends InstanceBase {
 						},
 					})
 
-					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+					this.sendCommand(message)
 				},
 			},
 			timer_set: {
@@ -395,7 +451,7 @@ class UniligaCGInstance extends InstanceBase {
 						},
 					})
 
-					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+					this.sendCommand(message)
 				},
 			},
 			timer_set_mode: {
@@ -428,7 +484,7 @@ class UniligaCGInstance extends InstanceBase {
 						},
 					})
 
-					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+					this.sendCommand(message)
 				},
 			},
 			prediction_state_analyst: {
@@ -472,7 +528,7 @@ class UniligaCGInstance extends InstanceBase {
 						},
 					})
 
-					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+					this.sendCommand(message)
 				},
 			},
 			prediction_state_caster: {
@@ -516,7 +572,7 @@ class UniligaCGInstance extends InstanceBase {
 						},
 					})
 
-					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+					this.sendCommand(message)
 				},
 			},
 			set_current_match: {
@@ -546,7 +602,49 @@ class UniligaCGInstance extends InstanceBase {
 						},
 					})
 
-					this.ws.send(message + (this.config.append_new_line ? '\r\n' : ''))
+					this.sendCommand(message)
+				},
+			},
+			graphic_state: {
+				name: 'Set Graphic State',
+				options: [
+					{
+						id: 'graphic',
+						label: 'Graphic',
+						type: 'dropdown',
+						default: 'schedule',
+						choices: GRAPHICS.map((g) => ({ id: g.id, label: g.label })),
+					},
+					{
+						id: 'action',
+						label: 'Action',
+						type: 'dropdown',
+						default: 'toggle',
+						choices: [
+							{ id: 'toggle', label: 'Toggle' },
+							{ id: 'visible', label: 'Visible' },
+							{ id: 'hidden', label: 'Hidden' },
+						],
+					},
+				],
+				callback: async (action, context) => {
+					const data = {
+						graphic: await context.parseVariablesInString(action.options.graphic),
+						type: await context.parseVariablesInString(action.options.action),
+					}
+
+					if (this.config.debug_messages) {
+						this.log('debug', `Message sent: ${action}`)
+					}
+					const message = JSON.stringify({
+						message: {
+							type: 'companion_graphic_state',
+							project_id: this.config.project_id,
+							data: data,
+						},
+					})
+
+					this.sendCommand(message)
 				},
 			},
 		})
