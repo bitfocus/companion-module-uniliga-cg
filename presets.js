@@ -63,14 +63,20 @@ export function presets(label) {
 		[{ actionId: 'set_current_match', options: { action: 'next' } }]
 	)
 
+	// Grafiken mit Index als Beispiel für die erste Tabelle und das erste Bracket, OW-Teams für beide Teams
 	GRAPHICS.forEach((g) => {
-		result[`graphic_${g.id}`] = button(
-			'Grafiken',
-			`${g.label} ein/aus`,
-			g.label,
-			[{ actionId: 'graphic_state', options: { graphic: g.id, action: 'toggle' } }],
-			[{ feedbackId: 'graphic_visible', options: { graphic: g.id }, style: ACTIVE_STYLE }]
-		)
+		const indices = !g.indexed ? [undefined] : g.id === 'owRoster' ? [0, 1] : [0]
+		indices.forEach((index) => {
+			const suffix = index === undefined ? '' : `_${index}`
+			const label = index === undefined ? g.label : `${g.label} ${index}`
+			result[`graphic_${g.id}${suffix}`] = button(
+				'Grafiken',
+				`${label} ein/aus`,
+				label,
+				[{ actionId: 'graphic_state', options: { graphic: g.id, index: index ?? 0, action: 'toggle' } }],
+				[{ feedbackId: 'graphic_visible', options: { graphic: g.id, index: index ?? 0 }, style: ACTIVE_STYLE }]
+			)
+		})
 	})
 
 	result.interview = button(
