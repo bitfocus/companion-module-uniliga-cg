@@ -1,36 +1,32 @@
-// Grafiken, die per Action ein- und ausgeblendet werden; id = Feld im graphics-Store des Backends.
-// indexed: eine Grafik pro Tabelle, Bracket oder Team, im Store dann als <id>_<index> (z. B. standings_0)
+// id = key in the backend's graphics store; indexed graphics are stored as <id>_<index>
 export const GRAPHICS = [
 	{ id: 'schedule', label: 'Schedule' },
-	{ id: 'standings', label: 'Tabelle', indexed: true },
+	{ id: 'standings', label: 'Standings', indexed: true },
 	{ id: 'rosters', label: 'Roster' },
 	{ id: 'brackets', label: 'Bracket', indexed: true },
+	{ id: 'mapveto', label: 'Mapveto' },
 	{ id: 'owRosters', label: 'OW Hero Face-off' },
 	{ id: 'owRoster', label: 'OW Heroes Team', indexed: true },
 	{ id: 'owHeroban', label: 'OW Hero Ban' },
-	{ id: 'tftTable', label: 'TFT Tabelle' },
-	{ id: 'tftLobbies', label: 'TFT Lobbys' },
+	{ id: 'tftTable', label: 'TFT Standings' },
+	{ id: 'tftLobbies', label: 'TFT Lobbies' },
 	{ id: 'tftResult', label: 'TFT Stream Lobby' },
-	{ id: 'tftBar', label: 'TFT Leiste' },
+	{ id: 'tftBar', label: 'TFT Bar' },
 ]
 
-// Feld im graphics-Store; der Index zählt nur bei Grafiken mit indexed, ohne gültigen Index gilt 0
 export function graphicKey(graphic, index) {
 	return GRAPHICS.find((g) => g.id === graphic)?.indexed
 		? `${graphic}_${Math.max(0, Math.trunc(Number(index) || 0))}`
 		: graphic
 }
 
-// Talent-Gruppen mit Prediction-Bug; key = Feld im talents-Store
 export const TALENT_ROLES = [
 	{ id: 'caster', key: 'casters', label: 'Caster' },
 	{ id: 'analyst', key: 'analysts', label: 'Analyst' },
 ]
 
-// Nachrichten-Typen, deren letzten Stand das Modul für Variablen und Feedbacks behält
 export const STATE_TYPES = ['schedule', 'talents', 'graphics']
 
-// Format als Kürzel wie in den Overlays: BO3, bei Games Series Zahl zuerst (3GS)
 export function formatLabel(format) {
 	if (!format) return ''
 	return format.short === 'GS' ? `${format.value ?? ''}${format.short}` : `${format.short ?? ''}${format.value ?? ''}`
@@ -46,7 +42,6 @@ export function nextMatch(state) {
 	return schedule?.matches?.[(schedule.current_match_index ?? 0) + 1]
 }
 
-// Links/rechts wie im laufenden Match: isInverted tauscht die Seiten, wie bei der Score-Action im Backend
 export function sides(match) {
 	const opponents = match?.opponents ?? []
 	return match?.isInverted ? [opponents[1], opponents[0]] : [opponents[0], opponents[1]]
@@ -70,7 +65,6 @@ export function interviewVisible(state) {
 	return !!state.talents?.interview?.playing
 }
 
-// Pro Feedback der Teil des Stands, von dem es abhängt; nur wenn sich der ändert, wird das Feedback neu geprüft
 const FEEDBACK_DEPENDENCIES = {
 	interview_bug_state: (state) => interviewVisible(state),
 	graphic_visible: (state) => state.graphics ?? {},
@@ -83,7 +77,6 @@ export function changedFeedbacks(oldState, newState) {
 		.map(([id]) => id)
 }
 
-// Variablen-IDs der Talents hängen von der Anzahl der Caster und Analysten ab
 function talentVariables(state) {
 	const variables = []
 	TALENT_ROLES.forEach((role) => {
@@ -92,14 +85,14 @@ function talentVariables(state) {
 				{ variableId: `${role.id}_${i}_name`, name: `${role.label} ${i}: Name`, value: talentName(talent) },
 				{
 					variableId: `${role.id}_${i}_prediction`,
-					name: `${role.label} ${i}: Prediction (Teamkürzel)`,
+					name: `${role.label} ${i}: Prediction (team short name)`,
 					value: talent?.prediction?.short ?? '',
 				},
 				{
 					variableId: `${role.id}_${i}_prediction_visible`,
-					name: `${role.label} ${i}: Prediction-Bug sichtbar`,
+					name: `${role.label} ${i}: Prediction bug visible`,
 					value: predictionVisible(state, role.id, i),
-				}
+				},
 			)
 		})
 	})
@@ -109,20 +102,19 @@ function talentVariables(state) {
 function teamVariables(prefix, label, opponent) {
 	const team = opponent?.team
 	return [
-		{ variableId: `${prefix}_name`, name: `${label}: Teamname`, value: team?.name ?? '' },
-		{ variableId: `${prefix}_short`, name: `${label}: Teamkürzel`, value: team?.short ?? '' },
-		{ variableId: `${prefix}_city`, name: `${label}: Hochschule/Stadt`, value: team?.city ?? '' },
+		{ variableId: `${prefix}_name`, name: `${label}: Team name`, value: team?.name ?? '' },
+		{ variableId: `${prefix}_short`, name: `${label}: Team short name`, value: team?.short ?? '' },
+		{ variableId: `${prefix}_city`, name: `${label}: University/City`, value: team?.city ?? '' },
 	]
 }
 
-// Grafiken mit Index bekommen Variablen für jeden Index, den der graphics-Store schon kennt
 function graphicVariables(state) {
 	const variables = []
 	GRAPHICS.forEach((g) => {
 		if (!g.indexed) {
 			variables.push({
 				variableId: `graphic_${g.id}`,
-				name: `Grafik ${g.label} eingeblendet`,
+				name: `Graphic ${g.label} visible`,
 				value: graphicVisible(state, g.id),
 			})
 			return
@@ -135,7 +127,7 @@ function graphicVariables(state) {
 		indices.forEach((i) => {
 			variables.push({
 				variableId: `graphic_${g.id}_${i}`,
-				name: `Grafik ${g.label} ${i} eingeblendet`,
+				name: `Graphic ${g.label} ${i} visible`,
 				value: graphicVisible(state, g.id, i),
 			})
 		})
@@ -143,7 +135,6 @@ function graphicVariables(state) {
 	return variables
 }
 
-// Alle Variablen mit Name und aktuellem Wert; leere Werte, solange kein Stand geladen ist
 export function variables(state) {
 	const match = currentMatch(state)
 	const [left, right] = sides(match)
@@ -152,21 +143,25 @@ export function variables(state) {
 	return [
 		{
 			variableId: 'match_number',
-			name: 'Aktuelles Match: Nummer (ab 1)',
+			name: 'Current match: Number (from 1)',
 			value: match ? (state.schedule.current_match_index ?? 0) + 1 : '',
 		},
-		{ variableId: 'match_count', name: 'Anzahl Matches im Schedule', value: state.schedule?.matches?.length ?? '' },
-		{ variableId: 'match_time', name: 'Aktuelles Match: Uhrzeit', value: match?.time ?? '' },
-		{ variableId: 'match_format', name: 'Aktuelles Match: Format (BO3, 3GS …)', value: formatLabel(match?.format) },
-		{ variableId: 'match_info', name: 'Aktuelles Match: Matchinfo', value: match?.matchInfo ?? '' },
-		...teamVariables('left', 'Links', left),
-		{ variableId: 'left_score', name: 'Links: Score', value: left?.score ?? '' },
-		...teamVariables('right', 'Rechts', right),
-		{ variableId: 'right_score', name: 'Rechts: Score', value: right?.score ?? '' },
-		...teamVariables('next_left', 'Nächstes Match links', nextLeft),
-		...teamVariables('next_right', 'Nächstes Match rechts', nextRight),
+		{
+			variableId: 'match_count',
+			name: 'Number of matches in the schedule',
+			value: state.schedule?.matches?.length ?? '',
+		},
+		{ variableId: 'match_time', name: 'Current match: Time', value: match?.time ?? '' },
+		{ variableId: 'match_format', name: 'Current match: Format (BO3, 3GS …)', value: formatLabel(match?.format) },
+		{ variableId: 'match_info', name: 'Current match: Match info', value: match?.matchInfo ?? '' },
+		...teamVariables('left', 'Left', left),
+		{ variableId: 'left_score', name: 'Left: Score', value: left?.score ?? '' },
+		...teamVariables('right', 'Right', right),
+		{ variableId: 'right_score', name: 'Right: Score', value: right?.score ?? '' },
+		...teamVariables('next_left', 'Next match left', nextLeft),
+		...teamVariables('next_right', 'Next match right', nextRight),
 		...graphicVariables(state),
-		{ variableId: 'interview_visible', name: 'Interview-Bug sichtbar', value: interviewVisible(state) },
+		{ variableId: 'interview_visible', name: 'Interview bug visible', value: interviewVisible(state) },
 		...talentVariables(state),
 	]
 }
