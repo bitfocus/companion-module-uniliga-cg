@@ -1,4 +1,3 @@
-// Grafik-Actions und -Feedbacks bekommen den Index für Tabellen, Brackets und Teams; vorhandene zeigen auf Index 0
 function addGraphicIndex(context, props) {
 	const result = { updatedConfig: null, updatedActions: [], updatedFeedbacks: [] }
 	props.actions.forEach((action) => {
@@ -16,4 +15,15 @@ function addGraphicIndex(context, props) {
 	return result
 }
 
-export const upgradeScripts = [addGraphicIndex]
+function timerStateRestart(context, props) {
+	const result = { updatedConfig: null, updatedActions: [], updatedFeedbacks: [] }
+	props.actions.forEach((action) => {
+		if (action.actionId === 'timer_state' && action.options.action === 'start') {
+			action.options.action = 'restart'
+			result.updatedActions.push(action)
+		}
+	})
+	return result
+}
+
+export const upgradeScripts = [addGraphicIndex, timerStateRestart]

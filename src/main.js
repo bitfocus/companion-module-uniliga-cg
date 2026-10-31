@@ -14,8 +14,7 @@ import {
 } from './state.js'
 import { presets, ACTIVE_STYLE } from './presets.js'
 
-// ws-Import über eine Konstante: der minifizierte Webpack-Build der Companion-Tools übersetzt `new WebSocket(url)`
-// direkt auf den Import falsch, das Modul bricht dann beim Verbinden mit "is not a constructor" ab
+// the minified companion-module-build output breaks `new WebSocket()` on the default import
 const WebSocketClient = WebSocket
 
 const VISIBILITY_CHOICES = [
@@ -38,7 +37,6 @@ const GRAPHIC_OPTIONS = [
 		default: 'schedule',
 		choices: GRAPHICS.map((g) => ({ id: g.id, label: g.label })),
 	},
-	// nur sichtbar bei Grafiken, die es pro Tabelle, Bracket oder Team gibt
 	{
 		id: 'index',
 		label: 'Index',
@@ -57,11 +55,8 @@ const GRAPHIC_OPTIONS = [
 class UniligaCGInstance extends InstanceBase {
 	isInitialized = false
 
-	// letzter Stand pro Nachrichten-Typ aus STATE_TYPES, z. B. state.schedule
 	state = {}
-	// aktuell definierte Variablen-IDs, um Definitionen nur bei Änderung neu zu setzen
 	variableIds = ''
-	// zuletzt gesetzte Variablen-Werte, um nur geänderte Werte zu senden
 	variableValues = {}
 	wsRegex = '^wss?:\\/\\/([\\da-z\\.-]+)(:\\d{1,5})?(?:\\/(.*))?$'
 
@@ -88,10 +83,10 @@ class UniligaCGInstance extends InstanceBase {
 
 	async configUpdated(config) {
 		this.config = config
+		this.setPresetDefinitions(presets(this.label))
 		this.initWebSocket()
 	}
 
-	// Stand übernehmen und nur die Variablen und Feedbacks aktualisieren, die sich dadurch ändern
 	setState(state) {
 		const feedbacks = changedFeedbacks(this.state, state)
 		this.state = state
@@ -101,8 +96,6 @@ class UniligaCGInstance extends InstanceBase {
 		}
 	}
 
-	// Variablen aus dem aktuellen Stand; Definitionen nur neu setzen, wenn sich die IDs ändern (z. B. mehr Caster),
-	// Werte nur, wenn sie sich geändert haben
 	updateVariables() {
 		const list = variables(this.state)
 		const ids = list.map((v) => v.variableId).join(',')
@@ -117,7 +110,6 @@ class UniligaCGInstance extends InstanceBase {
 		this.variableValues = Object.fromEntries(list.map((v) => [v.variableId, v.value]))
 	}
 
-	// Projekt beitreten, damit das Backend Updates schickt, und den gespeicherten Stand anfordern
 	joinProject() {
 		this.sendRaw({ type: 'join', project_id: this.config.project_id })
 		this.sendRaw({ type: 'load_all', project_id: this.config.project_id })
@@ -135,8 +127,7 @@ class UniligaCGInstance extends InstanceBase {
 		this.ws.send(text + (this.config.append_new_line ? '\r\n' : ''))
 	}
 
-	// Companion-Befehl senden; das Backend schickt das Ergebnis an alle außer dem Absender,
-	// deshalb danach den Stand neu laden, damit Variablen und Feedbacks nachziehen
+	// the backend does not send the result back to the sender, so request the state again
 	sendCommand(type, data = '') {
 		if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
 			this.log('warn', `Not connected, command not sent: ${type}`)
@@ -157,8 +148,7 @@ class UniligaCGInstance extends InstanceBase {
 		}
 	}
 
-	// Alte Verbindung ohne ihre Handler schließen, damit ihr 'close' keinen weiteren Reconnect auslöst;
-	// der leere 'error'-Handler fängt den Fehler beim Abbruch eines noch laufenden Verbindungsaufbaus ab
+	// detach the handlers first so the old socket's 'close' does not trigger a reconnect
 	closeWebSocket() {
 		if (!this.ws) return
 		this.ws.removeAllListeners()
@@ -216,7 +206,6 @@ class UniligaCGInstance extends InstanceBase {
 			return
 		}
 
-		// Nur Nachrichten des eigenen Projekts mit einem der gemerkten Typen
 		if (!message || !STATE_TYPES.includes(message.type) || message.project_id !== this.config.project_id) {
 			return
 		}
